@@ -5,11 +5,12 @@
 //  Created by arham on 14/06/24.
 //
 
-#include "lib/print.h"
-#include "lib/cpu.h"
+#include "SDL2/SDL.h"
 
 int main(void) {
-    add(12, 12);
-    cpu();
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) != 0) {
+        printf("SDL_Init Error: %s\n", SDL_GetError());
+        return 1;
+    }
     return 0;
 }

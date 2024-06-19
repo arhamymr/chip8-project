@@ -5,6 +5,7 @@
     "*.arm": "plaintext",
     "sdl.h": "c",
     "image_loader.h": "c",
-    "error.h": "c"
+    "error.h": "c",
+    "chip8.h": "c"
   }
 }

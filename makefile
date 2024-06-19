@@ -1,20 +1,12 @@
-CC=gcc
-CFLAGS=-I include -L lib -l SDL2-2.0.0
-SRC= main.c
+CC=gcc 
+CFLAGS=-I/opt/homebrew/include -L/opt/homebrew/lib  -l SDL2-2.0.0 -l SDL2_image -Wall -g
+SRC=main.c error.c image_loader.c
 
 run : main
 	./main
-	
-main: main.c
+
+main: clean
 	$(CC) $(SRC) -o main $(CFLAGS)
 
-# experimental target x86_64
-x86_64:
-	$(CC) $(SRC) -o mainX86 $(CFLAGS) -march=x86-64
-
-# experimental target for arm
-arm64:
-	$(CC) $(SRC) -o mainarm64 $(CFLAGS) -march=armv8-a
-
 clean:
-	rm -f main mainX86 mainarm64
+	rm -f *.o main

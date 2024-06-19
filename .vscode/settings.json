@@ -3,6 +3,8 @@
   "C_Cpp_Runner.msvcBatchPath": "",
   "files.associations": {
     "*.arm": "plaintext",
-    "sdl.h": "c"
+    "sdl.h": "c",
+    "image_loader.h": "c",
+    "error.h": "c"
   }
 }

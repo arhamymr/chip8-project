@@ -1,3 +1,5 @@
 main
 mainarm64
 mainx86
+
+*.o

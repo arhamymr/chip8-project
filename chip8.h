@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-
+#include <SDL2/SDL.h>
 struct Chip8 {
     unsigned short opcode;
     unsigned char memory[0xFFF];
@@ -19,3 +19,4 @@ struct Chip8 {
 void initialize_chip8(struct Chip8 *chip8);
 void load_program_to_memory(const char *filename, struct Chip8 *chip8);
 void execute_opcode(struct Chip8 *chip8);
+void render_display(SDL_Renderer *renderer, struct Chip8 *chip8);

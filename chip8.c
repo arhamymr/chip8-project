@@ -283,6 +283,7 @@ void execute_opcode(struct Chip8* chip8) {
             unsigned short n = opcode & 0x000F;
             unsigned short pixel;
             chip8->v_register[0xF] = 0;
+            
             for (int row =0; row < n; row++) {
                 pixel = chip8->memory[chip8->I + row];
                 for (int col = 0; col < 8; col++) {
@@ -323,11 +324,11 @@ void execute_opcode(struct Chip8* chip8) {
             break;
         case 0xF000:
             switch (opcode & 0x00FF) {
-                case 0x0007:
+                case 0x07:
                     chip8->v_register[(opcode >> 8) & 0x000F] = chip8->delay_timer;
                     chip8->pc += 2;
                     break;
-                case 0x000A:
+                case 0x0A:
                 {
                     unsigned short x = (opcode >> 8) & 0x000F;
                     
@@ -348,35 +349,35 @@ void execute_opcode(struct Chip8* chip8) {
                     break;
                 }
                     
-                case 0x0015:
+                case 0x15:
                 {
                     unsigned short x = (opcode >> 8) & 0x000F;
                     chip8->delay_timer = chip8->v_register[x];
                     chip8->pc += 2;
                     break;
                 }
-                case 0x0018:
+                case 0x18:
                 {
                     unsigned short x = (opcode >> 8) & 0x000F;
                     chip8->sound_timer = chip8->v_register[x];
                     chip8->pc += 2;
                     break;
                 }
-                case 0x001E:
+                case 0x1E:
                 {
                     unsigned short x = (opcode >> 8) & 0x000F;
                     chip8->I += chip8->v_register[x];
                     chip8->pc += 2;
                     break;
                 }
-                case 0x0029:
+                case 0x29:
                 {
                     unsigned short x = (opcode >> 8) & 0x000F;
                     chip8->I = chip8->v_register[x] * 0x5;
                     chip8->pc += 2;
                     break;
                 }
-                case 0x0033:
+                case 0x33:
                 {
                     unsigned short x = (opcode >> 8) & 0x000F;
                     chip8->memory[chip8->I] = chip8->v_register[x] / 100;
@@ -385,7 +386,7 @@ void execute_opcode(struct Chip8* chip8) {
                     chip8->pc += 2;
                     break;
                 }
-                case 0x0055:
+                case 0x55:
                 {
                     unsigned short x = (opcode >> 8) & 0x000F;
                     for (int i = 0; i <= x; i++) {
@@ -395,7 +396,7 @@ void execute_opcode(struct Chip8* chip8) {
                     chip8->pc += 2;
                     break;
                 }
-                case 0x0065:
+                case 0x65:
                 {
                     unsigned short x = (opcode >> 8) & 0x000F;
                     for (int i = 0; i <= x; i++) {
@@ -405,10 +406,25 @@ void execute_opcode(struct Chip8* chip8) {
                     chip8->pc += 2;
                     break;
                 }
+                default: 
+                    printf("Unknown sub opcode: 0x%X\n", opcode & 0x00FF);
+                    chip8->pc += 2;
+                    break;
             }
+            break;
         default: 
             printf("Unknown opcode: 0x%X\n", opcode);
             chip8->pc += 2;
             break;
+    }
+}
+
+void render_display(SDL_Renderer *renderer, struct Chip8* chip8) {
+    for (int i=0;i < sizeof(chip8->gfx); i++) {
+        int x = i % 64;
+        int y = i / 64;
+        SDL_Rect fillRect = { x * 10, y * 10, 10, 10 };
+        SDL_SetRenderDrawColor(renderer, chip8->gfx[i] == 1 ? 0xFF: 0x00, 0x00, 0x00, 0x00);
+        SDL_RenderFillRect(renderer, &fillRect);
     }
 }

@@ -104,14 +104,14 @@ void execute_opcode(struct Chip8* chip8) {
             chip8->pc = opcode & 0x0FFF;
             break;
         case 0x3000:
-            if (chip8->v_register[(opcode >> 8) & 0x000F] == opcode & 0x00FF) {
+            if (chip8->v_register[(opcode >> 8) & 0x000F] == (opcode & 0x00FF)) {
                 chip8->pc += 4;
             } else {
                 chip8->pc += 2;
             }
             break;
         case 0x4000:
-            if (chip8->v_register[(opcode >> 8) & 0x000F] != opcode & 0x00FF) {
+            if (chip8->v_register[(opcode >> 8) & 0x000F] != (opcode & 0x00FF)) {
                 chip8->pc += 4;
             } else {
                 chip8->pc += 2;
@@ -151,6 +151,7 @@ void execute_opcode(struct Chip8* chip8) {
                   
                     break;
                 case 0x0004:
+                {
                     unsigned short x = (opcode >> 8) & 0x000F;
                     unsigned short y = (opcode >> 4) & 0x000F;
 
@@ -165,7 +166,10 @@ void execute_opcode(struct Chip8* chip8) {
                     chip8->v_register[x] = sum & 0x00FF;
               
                     break;
+                }
+                   
                 case 0x0005:
+                {
                     unsigned short x = (opcode >> 8) & 0x000F;
                     unsigned short y = (opcode >> 4) & 0x000F;
                     
@@ -180,8 +184,11 @@ void execute_opcode(struct Chip8* chip8) {
                     chip8->v_register[x] -= chip8->v_register[y];
                     
                     break;
+                }
+                    
 
                 case 0x0006:
+                {
                     unsigned short x = (opcode >> 8) & 0x000F;
 
                     if (chip8->v_register[x] & 0x0001) {
@@ -195,7 +202,10 @@ void execute_opcode(struct Chip8* chip8) {
                     chip8->v_register[x] >>= 1;
 
                     break;
+                }
+                    
                 case 0x0007:
+                {
                     unsigned short x = (opcode >> 8) & 0x000F;
                     unsigned short y = (opcode >> 4) & 0x000F;
 
@@ -210,7 +220,10 @@ void execute_opcode(struct Chip8* chip8) {
                     chip8->v_register[x] = chip8->v_register[y] - chip8->v_register[x];
                    
                     break; 
+                }
+                   
                 case 0x000E:
+                {
                     unsigned short x = (opcode >> 8) & 0x000F;
 
                     if (chip8->v_register[x] & 0x8000) {
@@ -223,6 +236,8 @@ void execute_opcode(struct Chip8* chip8) {
                     // you can shift or multiply
                     chip8->v_register[x] <<= 1;
                     break;
+                }
+                   
                 default:
                     printf("Unknown sub opcode 0x8 : 0x%X\n", opcode);
                     chip8->pc += 2;
@@ -231,6 +246,7 @@ void execute_opcode(struct Chip8* chip8) {
             chip8->pc += 2;
             break;
         case 0x9000:
+        {
             unsigned short x = (opcode >> 8) & 0x000F;
             unsigned short y = (opcode >> 4) & 0x000F;
             
@@ -241,21 +257,27 @@ void execute_opcode(struct Chip8* chip8) {
             }
 
             break;
+        }
+           
         case 0xA000:
             chip8->I = opcode & 0x0FFF;
             chip8->pc += 2;
             break;
         case 0xB000:
-            chip9->pc = (opcode & 0x0FFF) + chip8->v_register[0];
+            chip8->pc = (opcode & 0x0FFF) + chip8->v_register[0];
             break;
         case 0xC000:
+        {
             unsigned short x = (opcode >> 8) & 0x000F;
             unsigned short random = rand() % 0xFF;
 
-            ship8->v_register[x] = random & (opcode & 0x00FF);
+            chip8->v_register[x] = random & (opcode & 0x00FF);
             chip8->pc += 2;
             break;
+        }
+            
         case 0xD000:
+        {
             unsigned short x = chip8->v_register[(opcode >> 8) & 0x000F];
             unsigned short y = chip8->v_register[(opcode >> 4) & 0x000F];
             unsigned short n = opcode & 0x000F;
@@ -275,6 +297,8 @@ void execute_opcode(struct Chip8* chip8) {
 
             chip8->pc += 2;
             break;
+        }
+            
         case 0xE000:
             switch (opcode & 0x00FF) {
                 case 0x009E:
@@ -304,6 +328,7 @@ void execute_opcode(struct Chip8* chip8) {
                     chip8->pc += 2;
                     break;
                 case 0x000A:
+                {
                     unsigned short x = (opcode >> 8) & 0x000F;
                     
                     bool key_pressed = false;
@@ -321,34 +346,47 @@ void execute_opcode(struct Chip8* chip8) {
 
                     chip8->pc += 2;
                     break;
+                }
+                    
                 case 0x0015:
+                {
                     unsigned short x = (opcode >> 8) & 0x000F;
                     chip8->delay_timer = chip8->v_register[x];
                     chip8->pc += 2;
                     break;
+                }
                 case 0x0018:
+                {
                     unsigned short x = (opcode >> 8) & 0x000F;
                     chip8->sound_timer = chip8->v_register[x];
                     chip8->pc += 2;
                     break;
+                }
                 case 0x001E:
+                {
                     unsigned short x = (opcode >> 8) & 0x000F;
                     chip8->I += chip8->v_register[x];
                     chip8->pc += 2;
                     break;
+                }
                 case 0x0029:
+                {
                     unsigned short x = (opcode >> 8) & 0x000F;
                     chip8->I = chip8->v_register[x] * 0x5;
                     chip8->pc += 2;
                     break;
+                }
                 case 0x0033:
+                {
                     unsigned short x = (opcode >> 8) & 0x000F;
                     chip8->memory[chip8->I] = chip8->v_register[x] / 100;
                     chip8->memory[chip8->I + 1] = (chip8->v_register[x] / 10) % 10;
                     chip8->memory[chip8->I + 2] = chip8->v_register[x] % 10;
                     chip8->pc += 2;
                     break;
+                }
                 case 0x0055:
+                {
                     unsigned short x = (opcode >> 8) & 0x000F;
                     for (int i = 0; i <= x; i++) {
                         chip8->memory[chip8->I + i] = chip8->v_register[i];
@@ -356,7 +394,9 @@ void execute_opcode(struct Chip8* chip8) {
                     chip8->I += x + 1;
                     chip8->pc += 2;
                     break;
+                }
                 case 0x0065:
+                {
                     unsigned short x = (opcode >> 8) & 0x000F;
                     for (int i = 0; i <= x; i++) {
                         chip8->v_register[i] = chip8->memory[chip8->I + i];
@@ -364,6 +404,7 @@ void execute_opcode(struct Chip8* chip8) {
                     chip8->I += x + 1;
                     chip8->pc += 2;
                     break;
+                }
             }
         default: 
             printf("Unknown opcode: 0x%X\n", opcode);

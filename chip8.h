@@ -18,4 +18,4 @@ struct Chip8 {
 
 void initialize_chip8(struct Chip8 *chip8);
 void load_program_to_memory(const char *filename, struct Chip8 *chip8);
-void execure_opcode(struct Chip8 *chip8);
+void execute_opcode(struct Chip8 *chip8);

@@ -18,8 +18,8 @@
       "type": "lldb",
       "request": "launch",
       "args": [],
-      "cwd": "/Users/arham/project/cpu8-project",
-      "program": "/Users/arham/project/cpu8-project/build/Debug/outDebug"
+      "cwd": "/Users/arham/c-project/cpu8-project",
+      "program": "/Users/arham/c-project/cpu8-project/build/Debug/outDebug"
     }
   ]
 }

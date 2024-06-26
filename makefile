@@ -3,22 +3,17 @@ CFLAGS=-I/opt/homebrew/include -L/opt/homebrew/lib  -l SDL2-2.0.0 -l SDL2_image 
 SRC=main.c
 
 
-ifeq ($(USE_EMSCRIPTEN),1)
-CFLAGS += -DEMS
-endif
-
-
 run : main
 	./main
 
 main: clean
-	$(CC) $(SRC) -o main $(CFLAGS)
+	$(CC) -g $(SRC) -o main $(CFLAGS)
 
 wasm-build:
-	emcc main.c -s USE_SDL=2 -o web/index.html --preload-file roms/tetris.ch8
+	emcc main-web.c -s USE_SDL=2 -o web/index.html --preload-file roms/
 
 wasm-run:
-	http-server .
+	http-server web/
 
 clean:
-	rm -f *.o web/**
+	rm -f main

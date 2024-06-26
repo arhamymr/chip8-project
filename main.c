@@ -5,9 +5,6 @@
 //  Created by arham on 14/06/24.
 //
 
-#ifdef USE_WASM
-#include <emscripten.h>
-#endif
 #include <SDL2/SDL.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -38,26 +35,49 @@ struct AppContext
     SDL_Surface *surface;
     struct Chip8 chip8;
     SDL_AudioDeviceID audio_device;
+    // char rom_name[50];
 };
 
-uint8_t app_keymap[16] = {
-    SDLK_1,
-    SDLK_2,
-    SDLK_3,
-    SDLK_4,
-    SDLK_q,
-    SDLK_w,
-    SDLK_e,
-    SDLK_r,
-    SDLK_a,
-    SDLK_s,
-    SDLK_d,
-    SDLK_f,
-    SDLK_z,
-    SDLK_x,
-    SDLK_c,
-    SDLK_v,
-};
+int get_app_key_number(SDL_Keycode keycode)
+{
+    switch (keycode)
+    {
+    case SDLK_1:
+        return 0;
+    case SDLK_2:
+        return 1;
+    case SDLK_3:
+        return 2;
+    case SDLK_4:
+        return 3;
+    case SDLK_q:
+        return 4;
+    case SDLK_w:
+        return 5;
+    case SDLK_e:
+        return 6;
+    case SDLK_r:
+        return 7;
+    case SDLK_a:
+        return 8;
+    case SDLK_s:
+        return 9;
+    case SDLK_d:
+        return 10;
+    case SDLK_f:
+        return 11;
+    case SDLK_z:
+        return 12;
+    case SDLK_x:
+        return 13;
+    case SDLK_c:
+        return 14;
+    case SDLK_v:
+        return 15;
+    default:
+        return -1; // Not found
+    }
+}
 
 void sdl_error(const char msg[])
 {
@@ -138,10 +158,7 @@ void initialize_chip8(struct Chip8 *chip8)
 
 void app_init(struct AppContext *ctx)
 {
-    struct Chip8 chip8;
-    initialize_chip8(&chip8);
-
-    ctx->chip8 = chip8;
+    initialize_chip8(&ctx->chip8);
     const char title[] = "CHIP8 Emulator";
     const int init_components = SDL_INIT_VIDEO | SDL_INIT_AUDIO;
 
@@ -233,10 +250,6 @@ void load_program_to_memory(const char *filename, struct Chip8 *chip8)
     for (int i = 0; i < file_size; i++)
     {
         chip8->memory[i + 0x200] = buffer[i];
-        if (i < 10 || i > file_size - 10)
-        { // Log the first and last 10 bytes loaded
-            printf("Memory[0x%X] = 0x%X\n", i + 0x200, buffer[i]);
-        }
     }
 
     fclose(file);
@@ -245,12 +258,9 @@ void load_program_to_memory(const char *filename, struct Chip8 *chip8)
 
 void execute_opcode(struct Chip8 *chip8)
 {
-    unsigned short opcode = chip8->memory[chip8->pc] << 8 | chip8->memory[chip8->pc + 1];
-
-    printf("Execute opcode %02X \n", opcode);
+    uint16_t opcode = chip8->memory[chip8->pc] << 8 | chip8->memory[chip8->pc + 1];
     switch (opcode & 0xF000)
     {
-    // opcode 6a02;
     case 0x0000:
         switch (opcode & 0x00FF)
         {
@@ -672,14 +682,6 @@ void handle_timer(struct AppContext *ctx)
 
 void handle_keypres(struct Chip8 *chip8, int index, bool pressed)
 {
-    for (int i = 0; i < 16; i++)
-    {
-        printf("%d", chip8->key[i]);
-        if (i < 15)
-        {
-            printf(", ");
-        }
-    }
     chip8->key[index] = pressed ? 1 : 0;
 }
 
@@ -690,10 +692,8 @@ void main_loop(void *arg)
 
     uint32_t start_tick;
     bool quit = false;
-#ifndef USE_WASM
     while (!quit)
     {
-#endif
         start_tick = SDL_GetTicks();
         execute_opcode(&ctx->chip8);
         handle_timer(ctx);
@@ -705,25 +705,26 @@ void main_loop(void *arg)
                 quit = true;
                 break;
             case SDL_KEYDOWN:
-                printf("keydown ");
-                for (int i = 0; i < 16; i++)
+            {
+                int idx = get_app_key_number(e.key.keysym.sym);
+                if (idx != -1)
                 {
-                    if (e.key.keysym.sym == app_keymap[i])
-                    {
-                        handle_keypres(&ctx->chip8, i, true);
-                    }
+                    handle_keypres(&ctx->chip8, idx, true);
                 }
+
                 break;
+            }
+
             case SDL_KEYUP:
-                printf("keyup ");
-                for (int i = 0; i < 16; i++)
+            {
+                int idx = get_app_key_number(e.key.keysym.sym);
+                if (idx != -1)
                 {
-                    if (e.key.keysym.sym == app_keymap[i])
-                    {
-                        handle_keypres(&ctx->chip8, i, false);
-                    }
+                    handle_keypres(&ctx->chip8, idx, false);
                 }
+
                 break;
+            }
             }
         }
 
@@ -735,22 +736,16 @@ void main_loop(void *arg)
         {
             SDL_Delay(16 - frame_time);
         }
-#ifndef USE_WASM
     }
-#endif
 }
 
 int main(void)
 {
     struct AppContext ctx;
     app_init(&ctx);
-    load_program_to_memory("roms/tetris.ch8", &ctx.chip8);
-#ifdef USE_WASM
-    emscripten_set_main_loop_arg(main_loop, &ctx, 0, 1);
-#else
+    load_program_to_memory("roms/test_opcode.ch8", &ctx.chip8);
     main_loop(&ctx);
     SDL_DestroyWindow(ctx.window);
     SDL_Quit();
-#endif
     return 0;
 }

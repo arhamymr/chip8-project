@@ -1,7 +1,6 @@
 main
-mainarm64
-mainx86
-
 main.dSYM/
 
 *.o
+
+build/

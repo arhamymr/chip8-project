@@ -5,6 +5,9 @@
 //  Created by arham on 14/06/24.
 //
 
+#ifdef USE_WASM
+#include <emscripten.h>
+#endif
 #include <SDL2/SDL.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -28,7 +31,16 @@ struct Chip8
     uint8_t key[16];
 };
 
-int app_keymap[16] = {
+struct AppContext
+{
+    SDL_Window *window;
+    SDL_Renderer *renderer;
+    SDL_Surface *surface;
+    struct Chip8 chip8;
+    SDL_AudioDeviceID audio_device;
+};
+
+uint8_t app_keymap[16] = {
     SDLK_1,
     SDLK_2,
     SDLK_3,
@@ -52,12 +64,6 @@ void sdl_error(const char msg[])
     printf("%s: %s\n", msg, SDL_GetError());
     SDL_Quit();
     exit(1);
-}
-
-void cleanup_sdl(SDL_Window *win)
-{
-    SDL_DestroyWindow(win);
-    SDL_Quit();
 }
 
 struct InitChip8
@@ -104,7 +110,7 @@ void initialize_chip8(struct Chip8 *chip8)
         chip8->memory[i] = 0;
     }
 
-    unsigned char chip8_fontset[80] = {
+    uint8_t chip8_fontset[80] = {
         0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
         0x20, 0x60, 0x20, 0x20, 0x70, // 1
         0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
@@ -130,11 +136,12 @@ void initialize_chip8(struct Chip8 *chip8)
     }
 }
 
-struct InitChip8 app_init()
+void app_init(struct AppContext *ctx)
 {
-    struct InitChip8 initChip8;
-    initialize_chip8(&initChip8.chip8);
+    struct Chip8 chip8;
+    initialize_chip8(&chip8);
 
+    ctx->chip8 = chip8;
     const char title[] = "CHIP8 Emulator";
     const int init_components = SDL_INIT_VIDEO | SDL_INIT_AUDIO;
 
@@ -143,24 +150,31 @@ struct InitChip8 app_init()
         sdl_error("SDL_Init Error");
     }
 
-    initChip8.window = SDL_CreateWindow(title,
-                                        SDL_WINDOWPOS_CENTERED,
-                                        SDL_WINDOWPOS_CENTERED,
-                                        SCREEN_WIDTH * SCREEN_SCALE,
-                                        SCREEN_HEIGHT * SCREEN_SCALE,
-                                        0);
+    ctx->window = SDL_CreateWindow(title,
+                                   SDL_WINDOWPOS_CENTERED,
+                                   SDL_WINDOWPOS_CENTERED,
+                                   SCREEN_WIDTH * SCREEN_SCALE,
+                                   SCREEN_HEIGHT * SCREEN_SCALE,
+                                   0);
 
-    if (initChip8.window == NULL)
+    if (ctx->window == NULL)
     {
         sdl_error("SDL_CreateWindow Error : ");
     }
 
-    initChip8.renderer = SDL_CreateRenderer(initChip8.window, -1, SDL_RENDERER_SOFTWARE | SDL_RENDERER_PRESENTVSYNC);
+    ctx->renderer = SDL_CreateRenderer(ctx->window, -1, SDL_RENDERER_SOFTWARE | SDL_RENDERER_PRESENTVSYNC);
 
-    if (initChip8.renderer == NULL)
+    if (ctx->renderer == NULL)
     {
-        SDL_DestroyWindow(initChip8.window);
+        SDL_DestroyWindow(ctx->window);
         sdl_error("SDL_CreateRenderer Error: ");
+    }
+
+    ctx->surface = SDL_GetWindowSurface(ctx->window);
+
+    if (ctx->surface == NULL)
+    {
+        sdl_error("SDL_GetWindowSurface Error: ");
     }
 
     // init audio
@@ -173,15 +187,11 @@ struct InitChip8 app_init()
     want.samples = 2048;
     want.callback = audio_callback;
 
-    SDL_AudioDeviceID audio_device = SDL_OpenAudioDevice(NULL, 0, &want, &have, 0);
-    if (audio_device == 0)
+    ctx->audio_device = SDL_OpenAudioDevice(NULL, 0, &want, &have, 0);
+    if (ctx->audio_device == 0)
     {
         printf("Failed to open audio: %s\n", SDL_GetError());
     }
-
-    initChip8.audio_device = audio_device;
-
-    return initChip8;
 }
 
 void load_program_to_memory(const char *filename, struct Chip8 *chip8)
@@ -624,7 +634,7 @@ void execute_opcode(struct Chip8 *chip8)
     }
 }
 
-void render_display(SDL_Renderer *renderer, struct Chip8 *chip8)
+void draw_display(SDL_Renderer *renderer, struct Chip8 *chip8)
 {
     SDL_RenderClear(renderer);
     for (int i = 0; i < sizeof(chip8->gfx); i++)
@@ -638,26 +648,25 @@ void render_display(SDL_Renderer *renderer, struct Chip8 *chip8)
 }
 
 // run this handle timer in 60HZ
-void handle_timer(struct Chip8 *chip8, SDL_AudioDeviceID audio_device)
+void handle_timer(struct AppContext *ctx)
 {
-
     // if non zero
-    if (chip8->delay_timer > 0)
+    if (ctx->chip8.delay_timer > 0)
     {
-        chip8->delay_timer--;
+        ctx->chip8.delay_timer--;
     }
 
-    if (chip8->sound_timer > 0)
+    if (ctx->chip8.sound_timer > 0)
     {
-        if (chip8->sound_timer == 1)
+        if (ctx->chip8.sound_timer == 1)
         {
-            SDL_PauseAudioDevice(audio_device, 0); // Resume playing the beep sound
+            SDL_PauseAudioDevice(ctx->audio_device, 0); // Resume playing the beep sound
         }
-        chip8->sound_timer--;
+        ctx->chip8.sound_timer--;
     }
     else
     {
-        SDL_PauseAudioDevice(audio_device, 1); // Resume playing the beep sound
+        SDL_PauseAudioDevice(ctx->audio_device, 1); // Resume playing the beep sound
     }
 }
 
@@ -671,46 +680,23 @@ void handle_keypres(struct Chip8 *chip8, int index, bool pressed)
             printf(", ");
         }
     }
-
     chip8->key[index] = pressed ? 1 : 0;
 }
 
-int main(void)
+void main_loop(void *arg)
 {
-
-    struct InitChip8 initChip8 = app_init();
-
-    SDL_Window *window = initChip8.window;
-    SDL_Renderer *renderer = initChip8.renderer;
-    struct Chip8 chip8 = initChip8.chip8;
-    SDL_AudioDeviceID audio_device = initChip8.audio_device;
-
-    load_program_to_memory("roms/Maze.ch8", &chip8);
-
-    SDL_Surface *surface = SDL_GetWindowSurface(window);
-
-    if (surface == NULL)
-    {
-        cleanup_sdl(window);
-        sdl_error("SDL_GetWindowSurface Error: ");
-        return 1;
-    }
-
-    // timer
-    // SDL_TimerID timerID = SDL_AddTimer(17, timer_callback, &chip8);
-
+    struct AppContext *ctx = (struct AppContext *)arg;
     SDL_Event e;
+
+    uint32_t start_tick;
     bool quit = false;
-
-    Uint32 start_tick;
-
+#ifndef USE_WASM
     while (!quit)
     {
+#endif
         start_tick = SDL_GetTicks();
-        execute_opcode(&chip8);
-
-        handle_timer(&chip8, audio_device);
-
+        execute_opcode(&ctx->chip8);
+        handle_timer(ctx);
         while (SDL_PollEvent(&e))
         {
             switch (e.type)
@@ -724,7 +710,7 @@ int main(void)
                 {
                     if (e.key.keysym.sym == app_keymap[i])
                     {
-                        handle_keypres(&chip8, i, true);
+                        handle_keypres(&ctx->chip8, i, true);
                     }
                 }
                 break;
@@ -734,23 +720,37 @@ int main(void)
                 {
                     if (e.key.keysym.sym == app_keymap[i])
                     {
-                        handle_keypres(&chip8, i, false);
+                        handle_keypres(&ctx->chip8, i, false);
                     }
                 }
                 break;
             }
         }
 
-        render_display(renderer, &chip8);
-        Uint32 frame_time = SDL_GetTicks() - start_tick;
+        draw_display(ctx->renderer, &ctx->chip8);
+        SDL_RenderPresent(ctx->renderer);
+
+        uint32_t frame_time = SDL_GetTicks() - start_tick;
         if (frame_time < 16)
         {
             SDL_Delay(16 - frame_time);
         }
-        SDL_RenderPresent(renderer);
+#ifndef USE_WASM
     }
+#endif
+}
 
-    cleanup_sdl(window);
-    // SDL_RemoveTimer(timerID);
+int main(void)
+{
+    struct AppContext ctx;
+    app_init(&ctx);
+    load_program_to_memory("roms/tetris.ch8", &ctx.chip8);
+#ifdef USE_WASM
+    emscripten_set_main_loop_arg(main_loop, &ctx, 0, 1);
+#else
+    main_loop(&ctx);
+    SDL_DestroyWindow(ctx.window);
+    SDL_Quit();
+#endif
     return 0;
 }

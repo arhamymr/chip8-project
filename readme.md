@@ -10,7 +10,7 @@ Dependencies managed using homebrew:
 2. Emscripten (For porting to WASM)
 3. http-server (For serving compilation result WASM)
 
-## Run Script
+## Compile Command
 
 this project using makefile for simplify compilation process, for native compilation using
 
@@ -21,7 +21,7 @@ make
 for compile to WASM using
 
 ```
-make wasm-build USE_WASM=1
+make wasm-build
 ```
 
 and for running web project and server via http-server

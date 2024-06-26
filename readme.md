@@ -7,24 +7,26 @@ Experimental emulator for the Chip-8 System, main goals for this project is to e
 Dependencies managed using homebrew:
 
 1. SDL2 (Simple Direct Media Layer)
-2. Emscripten (For porting to WASM)
-3. http-server (For serving compilation result WASM)
+2. Emscripten (porting to WASM)
+3. http-server (serving web)
 
 ## Compile Command
 
-this project using makefile for simplify compilation process, for native compilation using
+this project using makefile for simplify compilation process:
+
+Native compilation
 
 ```
 make
 ```
 
-for compile to WASM using
+Compile to .wasm and .js file
 
 ```
 make wasm-build
 ```
 
-and for running web project and server via http-server
+Running and serve web
 
 ```
 make wasm-run

@@ -9,10 +9,16 @@
 #include <SDL2/SDL.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <math.h>
 
 #define SCREEN_WIDTH 64
 #define SCREEN_HEIGHT 32
 #define SCREEN_SCALE 10
+
+int int_sqrt(int x)
+{
+  return sqrt(x);
+}
 
 struct Chip8
 {
@@ -36,8 +42,13 @@ struct AppContext
   SDL_Surface *surface;
   struct Chip8 chip8;
   SDL_AudioDeviceID audio_device;
-  // char rom_name[50];
+  char load_rom[20];
 };
+
+void call_externt(char msg[])
+{
+  printf("%s from javascript ", msg);
+}
 
 int get_app_key_number(SDL_Keycode keycode)
 {
@@ -734,6 +745,7 @@ void main_loop(void *arg)
 
 int main(void)
 {
+  printf("run");
   struct AppContext ctx;
   app_init(&ctx);
   load_program_to_memory("roms/test_opcode.ch8", &ctx.chip8);

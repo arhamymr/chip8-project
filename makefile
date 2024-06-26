@@ -10,7 +10,7 @@ main: clean
 	$(CC) -g $(SRC) -o main $(CFLAGS)
 
 wasm-build:
-	emcc main-web.c -s USE_SDL=2 -o web/index.html --preload-file roms/
+	emcc main-web.c -s USE_SDL=2 -s EXPORTED_FUNCTIONS='["_call_externt", "_main", "_int_sqrt"]'  -s EXPORTED_RUNTIME_METHODS='["ccall", "cwrap", "FS"]' -o web/source.js --preload-file roms/
 
 wasm-run:
 	http-server web/
